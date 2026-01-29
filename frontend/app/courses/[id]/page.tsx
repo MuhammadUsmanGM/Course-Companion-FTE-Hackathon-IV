@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 export default function CourseDetailPage() {
   const { id } = useParams();
@@ -203,11 +204,7 @@ export default function CourseDetailPage() {
         </div>
       </main>
 
-      <footer className="bg-white dark:bg-emerald-900 border-t border-emerald-200 dark:border-emerald-800 mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <p className="text-center text-emerald-600 dark:text-emerald-300">© 2026 Course Companion FTE. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

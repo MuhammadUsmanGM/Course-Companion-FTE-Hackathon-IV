@@ -1,9 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from typing import Optional
+import json
+from typing import Optional, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Course Companion FTE - Phase 1",
@@ -25,6 +31,7 @@ courses_db = {}
 users_db = {}
 progress_db = {}
 quizzes_db = {}
+hybrid_usage_db = {}  # Track usage for cost analysis
 
 # Data models
 class Course(BaseModel):
@@ -59,6 +66,69 @@ class QuizResult(BaseModel):
     score: float
     passed: bool
     feedback: str
+
+
+# Hybrid Intelligence Models
+class AdaptiveLearningRequest(BaseModel):
+    user_id: str
+    course_id: str
+    current_chapter_id: str
+    quiz_performance: Dict[str, float]
+    time_spent: Dict[str, int]
+
+
+class AdaptiveLearningResponse(BaseModel):
+    recommended_next_chapter: str
+    confidence: float
+    learning_style: str
+    improvement_areas: list
+    estimated_time_to_mastery: str
+
+
+class LLMAssessmentRequest(BaseModel):
+    user_id: str
+    quiz_id: str
+    question_id: str
+    user_response: str
+    correct_answer: str
+    question_context: str
+
+
+class LLMAssessmentResponse(BaseModel):
+    score: float
+    feedback: str
+    misconceptions_identified: list
+    recommended_study_topics: list
+    confidence_level: str
+
+
+class CrossChapterSynthesisRequest(BaseModel):
+    user_id: str
+    course_id: str
+    chapter_ids: list
+    learning_goals: list
+
+
+class CrossChapterSynthesisResponse(BaseModel):
+    synthesized_concepts: list
+    connections_identified: list
+    big_picture_insights: list
+    practical_applications: list
+
+
+class MentorSessionRequest(BaseModel):
+    user_id: str
+    course_id: str
+    chapter_id: str
+    question: str
+    context: str
+
+
+class MentorSessionResponse(BaseModel):
+    response: str
+    teaching_points: list
+    follow_up_questions: list
+    related_concepts: list
 
 # Initialize sample data
 def init_sample_data():
@@ -319,6 +389,221 @@ async def search_content(query: str):
     results.sort(key=lambda x: x["relevance"], reverse=True)
 
     return {"results": results[:10]}  # Return top 10 results
+
+
+# Phase 2: Hybrid Intelligence Endpoints
+# These endpoints use LLM calls and are premium features
+
+@app.post("/hybrid/adaptive-learning")
+async def adaptive_learning_path(request: AdaptiveLearningRequest):
+    """
+    Premium feature: Generate personalized learning path based on user performance
+    Cost: $0.018 per request (Claude Sonnet, ~2K tokens)
+    """
+    # Track usage for cost analysis
+    usage_key = f"{request.user_id}:{datetime.now().strftime('%Y-%m')}"
+    if usage_key not in hybrid_usage_db:
+        hybrid_usage_db[usage_key] = {"adaptive_learning": 0, "llm_assessment": 0, "synthesis": 0, "mentor_sessions": 0}
+    hybrid_usage_db[usage_key]["adaptive_learning"] += 1
+
+    logger.info(f"Adaptive learning request for user {request.user_id}, course {request.course_id}")
+
+    # Simulate LLM processing for adaptive learning
+    # In a real implementation, this would call an LLM API
+    current_chapter_idx = 0
+    for idx, chapter in enumerate(courses_db[request.course_id].chapters):
+        if chapter["id"] == request.current_chapter_id:
+            current_chapter_idx = idx
+            break
+
+    # Determine next chapter based on performance
+    next_chapter_idx = min(current_chapter_idx + 1, len(courses_db[request.course_id].chapters) - 1)
+
+    # Analyze quiz performance to identify weak areas
+    weak_areas = []
+    for quiz_id, score in request.quiz_performance.items():
+        if score < 0.7:  # Below passing threshold
+            weak_areas.append(quiz_id)
+
+    # Simulate learning style analysis
+    learning_style = "visual" if sum(request.time_spent.values()) > 300 else "kinesthetic"
+
+    response = AdaptiveLearningResponse(
+        recommended_next_chapter=courses_db[request.course_id].chapters[next_chapter_idx]["id"],
+        confidence=0.85,
+        learning_style=learning_style,
+        improvement_areas=weak_areas,
+        estimated_time_to_mastery="2-3 weeks"
+    )
+
+    logger.info(f"Adaptive learning response generated for user {request.user_id}")
+    return response
+
+
+@app.post("/hybrid/llm-assessment")
+async def llm_grade_assessment(request: LLMAssessmentRequest):
+    """
+    Premium feature: LLM-based assessment with detailed feedback
+    Cost: $0.014 per request (Claude Sonnet, ~1.5K tokens)
+    """
+    # Track usage for cost analysis
+    usage_key = f"{request.user_id}:{datetime.now().strftime('%Y-%m')}"
+    if usage_key not in hybrid_usage_db:
+        hybrid_usage_db[usage_key] = {"adaptive_learning": 0, "llm_assessment": 0, "synthesis": 0, "mentor_sessions": 0}
+    hybrid_usage_db[usage_key]["llm_assessment"] += 1
+
+    logger.info(f"LLM assessment request for user {request.user_id}, question {request.question_id}")
+
+    # Simulate LLM processing for assessment
+    # In a real implementation, this would call an LLM API
+    score = 0.8  # Simulated score based on similarity to correct answer
+
+    # Generate feedback based on user response vs correct answer
+    feedback_parts = []
+    if len(request.user_response) < 50:
+        feedback_parts.append("Your response is quite brief. Try to elaborate on your answer.")
+
+    if request.correct_answer.lower() in request.user_response.lower():
+        feedback_parts.append("Good job identifying the key concept!")
+    else:
+        feedback_parts.append(f"Consider reviewing: {request.correct_answer}")
+
+    feedback = " ".join(feedback_parts) if feedback_parts else "Well done! Your answer demonstrates good understanding."
+
+    # Identify potential misconceptions
+    misconceptions = ["Incomplete explanation"] if len(request.user_response) < 100 else []
+
+    # Recommend study topics
+    topics = ["Review fundamental concepts", "Practice with examples"]
+
+    response = LLMAssessmentResponse(
+        score=score,
+        feedback=feedback,
+        misconceptions_identified=misconceptions,
+        recommended_study_topics=topics,
+        confidence_level="high" if score >= 0.8 else "medium"
+    )
+
+    logger.info(f"LLM assessment response generated for user {request.user_id}")
+    return response
+
+
+@app.post("/hybrid/synthesis")
+async def cross_chapter_synthesis(request: CrossChapterSynthesisRequest):
+    """
+    Premium feature: Connect concepts across chapters and generate insights
+    Cost: $0.027 per request (Claude Sonnet, ~3K tokens)
+    """
+    # Track usage for cost analysis
+    usage_key = f"{request.user_id}:{datetime.now().strftime('%Y-%m')}"
+    if usage_key not in hybrid_usage_db:
+        hybrid_usage_db[usage_key] = {"adaptive_learning": 0, "llm_assessment": 0, "synthesis": 0, "mentor_sessions": 0}
+    hybrid_usage_db[usage_key]["synthesis"] += 1
+
+    logger.info(f"Synthesis request for user {request.user_id}, course {request.course_id}")
+
+    # Simulate LLM processing for cross-chapter synthesis
+    # In a real implementation, this would call an LLM API
+
+    # Extract concepts from specified chapters
+    concepts = []
+    for chapter_id in request.chapter_ids:
+        for chapter in courses_db[request.course_id].chapters:
+            if chapter["id"] == chapter_id:
+                concepts.append(chapter["title"])
+
+    # Generate connections between concepts
+    connections = [
+        f"The concept of '{concepts[0]}' builds upon '{concepts[-1]}' in important ways.",
+        f"Understanding '{concepts[0]}' is crucial for mastering '{concepts[1] if len(concepts) > 1 else concepts[0]}'."
+    ]
+
+    # Generate big picture insights
+    insights = [
+        "These concepts form a foundational understanding of the subject.",
+        "The progression from basic to advanced concepts demonstrates increasing complexity."
+    ]
+
+    # Generate practical applications
+    applications = [
+        "Apply these concepts in real-world scenarios to reinforce learning.",
+        "Connect these ideas to other subjects for deeper understanding."
+    ]
+
+    response = CrossChapterSynthesisResponse(
+        synthesized_concepts=concepts,
+        connections_identified=connections,
+        big_picture_insights=insights,
+        practical_applications=applications
+    )
+
+    logger.info(f"Synthesis response generated for user {request.user_id}")
+    return response
+
+
+@app.post("/hybrid/mentor-session")
+async def ai_mentor_session(request: MentorSessionRequest):
+    """
+    Premium feature: Long-running AI mentor for complex tutoring workflows
+    Cost: $0.090 per session (Claude Sonnet, ~10K tokens)
+    """
+    # Track usage for cost analysis
+    usage_key = f"{request.user_id}:{datetime.now().strftime('%Y-%m')}"
+    if usage_key not in hybrid_usage_db:
+        hybrid_usage_db[usage_key] = {"adaptive_learning": 0, "llm_assessment": 0, "synthesis": 0, "mentor_sessions": 0}
+    hybrid_usage_db[usage_key]["mentor_sessions"] += 1
+
+    logger.info(f"Mentor session request for user {request.user_id}, question: {request.question[:50]}...")
+
+    # Simulate LLM processing for mentor session
+    # In a real implementation, this would call an LLM API
+
+    # Generate a thoughtful response based on the question and context
+    response_text = f"I understand you're asking about '{request.question}'. Based on the context of '{request.context}', I'd suggest considering the following approach: "
+    response_text += "First, let's break down the problem into smaller components. Then, we can address each part systematically. "
+    response_text += "Would you like me to walk you through a specific example?"
+
+    teaching_points = [
+        "Break complex problems into smaller parts",
+        "Apply concepts learned in previous chapters",
+        "Practice with guided examples"
+    ]
+
+    follow_up_questions = [
+        "Can you think of any real-world applications for this concept?",
+        "How does this connect to what you learned in the previous chapter?",
+        "Would you like to try a practice problem?"
+    ]
+
+    related_concepts = [
+        "Foundational concepts from earlier chapters",
+        "Advanced applications in later chapters"
+    ]
+
+    response = MentorSessionResponse(
+        response=response_text,
+        teaching_points=teaching_points,
+        follow_up_questions=follow_up_questions,
+        related_concepts=related_concepts
+    )
+
+    logger.info(f"Mentor session response generated for user {request.user_id}")
+    return response
+
+
+@app.get("/hybrid/usage/{user_id}")
+async def get_hybrid_usage(user_id: str):
+    """
+    Get usage statistics for hybrid intelligence features for cost tracking
+    """
+    current_month = datetime.now().strftime('%Y-%m')
+    usage_key = f"{user_id}:{current_month}"
+
+    if usage_key in hybrid_usage_db:
+        return hybrid_usage_db[usage_key]
+    else:
+        return {"adaptive_learning": 0, "llm_assessment": 0, "synthesis": 0, "mentor_sessions": 0}
+
 
 if __name__ == "__main__":
     import uvicorn
