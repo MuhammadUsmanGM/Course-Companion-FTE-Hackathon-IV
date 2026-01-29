@@ -119,6 +119,15 @@ start.bat
 ├── architecture.md                 # Architecture diagram
 ├── cost-analysis.md                # Cost breakdown
 ├── spec.md                         # Specification document
+├── specs/                          # Comprehensive specifications
+│   ├── README.md                  # Specs overview
+│   ├── spec.md                    # Main specification
+│   ├── backend/spec.md            # Backend specifications
+│   ├── frontend/spec.md           # Frontend specifications
+│   ├── api/spec.md                # API specifications
+│   ├── architecture/spec.md       # Architecture specifications
+│   ├── testing/spec.md            # Testing specifications
+│   └── deployment/spec.md         # Deployment specifications
 ├── README.md                       # This document
 ├── start.bat                       # Windows startup script
 ├── test_api.py                     # API testing
