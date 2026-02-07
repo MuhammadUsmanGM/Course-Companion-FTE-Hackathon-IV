@@ -14,13 +14,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@router.get("/", response_model=List[CourseSchema])
+@router.get("/")
 async def get_courses(db: Session = Depends(get_db)):
     """Get all available courses"""
     try:
         courses = db.query(CourseModel).all()
         logger.info(f"Retrieved {len(courses)} courses")
-        return courses
+        return {"courses": courses}
     except Exception as e:
         logger.error(f"Error retrieving courses: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -42,7 +42,7 @@ async def get_course(course_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/{course_id}/chapters", response_model=List[ChapterSchema])
+@router.get("/{course_id}/chapters")
 async def get_course_chapters(course_id: str, db: Session = Depends(get_db)):
     """Get all chapters for a specific course"""
     try:
@@ -53,7 +53,7 @@ async def get_course_chapters(course_id: str, db: Session = Depends(get_db)):
             if not course_exists:
                 raise HTTPException(status_code=404, detail="Course not found")
         logger.info(f"Retrieved {len(chapters)} chapters for course: {course_id}")
-        return chapters
+        return {"chapters": chapters}
     except HTTPException:
         raise
     except Exception as e:

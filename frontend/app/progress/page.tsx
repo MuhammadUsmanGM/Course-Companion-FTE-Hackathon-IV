@@ -3,25 +3,24 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { courseApi, progressApi } from '@/lib/api';
 
 export default function ProgressPage() {
   const [user, setUser] = useState({ id: 'user-1', name: 'Student' });
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         // Fetch all courses to display progress
-        const coursesResponse = await fetch('http://localhost:8000/courses');
-        const coursesData = await coursesResponse.json();
+        const coursesData = await courseApi.getCourses();
 
         // For each course, fetch user progress
         const coursesWithProgress = await Promise.all(
           coursesData.courses.map(async (course: any) => {
             try {
-              const progressResponse = await fetch(`http://localhost:8000/progress/${user.id}/courses/${course.id}`);
-              const progressData = await progressResponse.json();
+              const progressData = await progressApi.getUserProgress(user.id, course.id);
 
               return {
                 ...course,

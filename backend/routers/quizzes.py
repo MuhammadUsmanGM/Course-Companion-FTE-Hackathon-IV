@@ -45,9 +45,9 @@ async def submit_quiz(submission: QuizSubmission, db: Session = Depends(get_db))
         total_questions = len(quiz.questions)
 
         for question in quiz.questions:
-            question_id = question.id
+            question_id = question.get('id')
             if question_id in submission.answers:
-                if submission.answers[question_id] == question.correct_answer:
+                if submission.answers[question_id] == question.get('correct_answer'):
                     correct_answers += 1
 
         score = correct_answers / total_questions if total_questions > 0 else 0

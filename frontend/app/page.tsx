@@ -1,8 +1,11 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Course } from '@/types/course';
 import CourseCard from '@/components/CourseCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { courseApi, progressApi } from '@/lib/api';
 
 export default function Home() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -14,8 +17,7 @@ export default function Home() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await fetch('http://localhost:8000/courses');
-        const data = await response.json();
+        const data = await courseApi.getCourses();
         setCourses(data.courses || []);
         setLoading(false);
       } catch (error) {
@@ -33,9 +35,7 @@ export default function Home() {
 
   const handleChapterComplete = async (courseId: string, chapterId: string) => {
     try {
-      await fetch(`http://localhost:8000/progress/${user.id}/courses/${courseId}/chapters/${chapterId}`, {
-        method: 'POST',
-      });
+      await progressApi.markChapterCompleted(user.id, courseId, chapterId);
 
       // Refresh the selected course to show updated progress
       if (selectedCourse?.id === courseId) {
@@ -83,25 +83,29 @@ export default function Home() {
             <div className="mb-6">
               <h3 className="text-lg font-medium text-emerald-700 dark:text-emerald-200 mb-4">Chapters</h3>
               <div className="space-y-4">
-                {selectedCourse.chapters.map((chapter, index) => (
-                  <div
-                    key={chapter.id}
-                    className="border border-emerald-200 dark:border-emerald-700 rounded-lg p-4 hover:bg-emerald-50 dark:hover:bg-emerald-700/50 transition"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium text-emerald-900 dark:text-emerald-100">Chapter {index + 1}: {chapter.title}</h4>
-                        <p className="text-emerald-600 dark:text-emerald-300 mt-1 line-clamp-2">{chapter.content.substring(0, 100)}...</p>
+                {selectedCourse.chapters && selectedCourse.chapters.length > 0 ? (
+                  selectedCourse.chapters.map((chapter: any, index: number) => (
+                    <div
+                      key={chapter.id}
+                      className="border border-emerald-200 dark:border-emerald-700 rounded-lg p-4 hover:bg-emerald-50 dark:hover:bg-emerald-700/50 transition"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-medium text-emerald-900 dark:text-emerald-100">Chapter {index + 1}: {chapter.title}</h4>
+                          <p className="text-emerald-600 dark:text-emerald-300 mt-1 line-clamp-2">{chapter.content.substring(0, 100)}...</p>
+                        </div>
+                        <button
+                          className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 transition dark:bg-emerald-700 dark:hover:bg-emerald-800"
+                          onClick={() => handleChapterComplete(selectedCourse.id, chapter.id)}
+                        >
+                          Mark Complete
+                        </button>
                       </div>
-                      <button
-                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 transition dark:bg-emerald-700 dark:hover:bg-emerald-800"
-                        onClick={() => handleChapterComplete(selectedCourse.id, chapter.id)}
-                      >
-                        Mark Complete
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-emerald-600 dark:text-emerald-300">No chapters available for this course.</p>
+                )}
               </div>
             </div>
 

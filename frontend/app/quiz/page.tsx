@@ -3,45 +3,51 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { quizApi, courseApi } from '@/lib/api';
 
 export default function QuizPage() {
-  const [quizzes, setQuizzes] = useState([]);
-  const [currentQuiz, setCurrentQuiz] = useState(null);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [currentQuiz, setCurrentQuiz] = useState<any>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // In a real app, this would fetch from the backend
-    // For now, we'll simulate with sample data
-    const sampleQuizzes = [
-      {
-        id: "quiz-python-basics",
-        title: "Python Basics Quiz",
-        description: "Test your knowledge of Python fundamentals",
-        course_id: "course-python-intro",
-        course_title: "Introduction to Modern Python",
-        questions: [
-          {
-            id: "q1",
-            question: "What is the correct way to declare a variable in Python?",
-            options: ["int x = 5", "var x = 5", "x = 5", "declare x = 5"],
-            correct_answer: "x = 5"
-          },
-          {
-            id: "q2",
-            question: "Which of these is a valid Python function declaration?",
-            options: ["function my_func():", "def my_func():", "func my_func():", "void my_func():"],
-            correct_answer: "def my_func():"
-          }
-        ],
-        passing_score: 0.7
-      }
-    ];
+  const userId = 'user-1';
 
-    setQuizzes(sampleQuizzes);
-    setLoading(false);
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        // Fetch all courses first
+        const coursesData = await courseApi.getCourses();
+        
+        // For each course, fetch its quizzes
+        const allQuizzes: any[] = [];
+        await Promise.all(
+          coursesData.courses.map(async (course: any) => {
+            try {
+              const courseQuizzes = await quizApi.getUserQuizzesForCourse(userId, course.id);
+              // Add course title to quizzes for display
+              const enrichedQuizzes = courseQuizzes.map((q: any) => ({
+                ...q,
+                course_title: course.title
+              }));
+              allQuizzes.push(...enrichedQuizzes);
+            } catch (err) {
+              console.error(`Error fetching quizzes for course ${course.id}:`, err);
+            }
+          })
+        );
+
+        setQuizzes(allQuizzes);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching quizzes:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchQuizzes();
   }, []);
 
   const startQuiz = (quiz: any) => {
@@ -61,31 +67,18 @@ export default function QuizPage() {
   const handleSubmitQuiz = async () => {
     if (!currentQuiz) return;
 
-    // Prepare submission data
-    const submission = {
-      user_id: 'user-1',
-      quiz_id: currentQuiz.id,
-      answers
-    };
-
     try {
-      // In a real app, we would submit to the backend
-      // For simulation, calculate score manually
-      let correctAnswers = 0;
-      currentQuiz.questions.forEach((question: any) => {
-        if (answers[question.id] === question.correct_answer) {
-          correctAnswers++;
-        }
-      });
+      const submission = {
+        user_id: userId,
+        quiz_id: currentQuiz.id,
+        answers
+      };
 
-      const score = correctAnswers / currentQuiz.questions.length;
-      const passed = score >= currentQuiz.passing_score;
-
+      const quizResult = await quizApi.submitQuiz(submission);
+      
       setResult({
-        score,
-        passed,
-        feedback: passed ? "Great job! You passed the quiz." : "Keep studying, you'll get it next time!",
-        correctAnswers,
+        ...quizResult,
+        correctAnswers: Math.round(quizResult.score * currentQuiz.questions.length),
         totalQuestions: currentQuiz.questions.length
       });
 

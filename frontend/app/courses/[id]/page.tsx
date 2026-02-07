@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { courseApi, progressApi } from '@/lib/api';
 
 export default function CourseDetailPage() {
   const { id } = useParams();
-  const [course, setCourse] = useState(null);
-  const [chapters, setChapters] = useState([]);
-  const [userProgress, setUserProgress] = useState({});
+  const courseId = id as string;
+  const [course, setCourse] = useState<any>(null);
+  const [chapters, setChapters] = useState<any[]>([]);
+  const [userProgress, setUserProgress] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({ id: 'user-1', name: 'Student' });
 
@@ -17,18 +19,15 @@ export default function CourseDetailPage() {
     const fetchCourseData = async () => {
       try {
         // Fetch course details
-        const courseResponse = await fetch(`http://localhost:8000/courses/${id}`);
-        const courseData = await courseResponse.json();
+        const courseData = await courseApi.getCourse(courseId);
         setCourse(courseData);
 
         // Fetch course chapters
-        const chaptersResponse = await fetch(`http://localhost:8000/courses/${id}/chapters`);
-        const chaptersData = await chaptersResponse.json();
+        const chaptersData = await courseApi.getCourseChapters(courseId);
         setChapters(chaptersData.chapters || []);
 
         // Fetch user progress
-        const progressResponse = await fetch(`http://localhost:8000/progress/${user.id}/courses/${id}`);
-        const progressData = await progressResponse.json();
+        const progressData = await progressApi.getUserProgress(user.id, courseId);
         setUserProgress(progressData);
 
         setLoading(false);
@@ -38,20 +37,17 @@ export default function CourseDetailPage() {
       }
     };
 
-    if (id) {
+    if (courseId) {
       fetchCourseData();
     }
-  }, [id]);
+  }, [courseId]);
 
-  const handleChapterComplete = async (chapterId) => {
+  const handleChapterComplete = async (chapterId: string) => {
     try {
-      await fetch(`http://localhost:8000/progress/${user.id}/courses/${id}/chapters/${chapterId}`, {
-        method: 'POST',
-      });
+      await progressApi.markChapterCompleted(user.id, courseId, chapterId);
 
       // Refresh progress
-      const progressResponse = await fetch(`http://localhost:8000/progress/${user.id}/courses/${id}`);
-      const progressData = await progressResponse.json();
+      const progressData = await progressApi.getUserProgress(user.id, courseId);
       setUserProgress(progressData);
     } catch (error) {
       console.error('Error marking chapter as complete:', error);
@@ -125,7 +121,7 @@ export default function CourseDetailPage() {
             <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-700/30 rounded-lg">
               <h3 className="font-medium text-emerald-800 dark:text-emerald-100 mb-2">Prerequisites</h3>
               <ul className="list-disc pl-5 text-emerald-700 dark:text-emerald-200">
-                {course.prerequisites.map((prereq, index) => (
+                {course.prerequisites.map((prereq: any, index: number) => (
                   <li key={index}>{prereq}</li>
                 ))}
               </ul>
@@ -136,7 +132,7 @@ export default function CourseDetailPage() {
             <h2 className="text-xl font-semibold text-emerald-800 dark:text-emerald-100 mb-4">Course Content</h2>
 
             <div className="space-y-4">
-              {chapters.map((chapter, index) => {
+              {chapters.map((chapter: any, index: number) => {
                 const isCompleted = userProgress.completed_chapters &&
                                   userProgress.completed_chapters.includes(chapter.id);
 

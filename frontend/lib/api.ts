@@ -42,9 +42,9 @@ export const courseApi = {
   getCourses: () => apiRequest('/api/v1/courses'),
   getCourse: (id: string) => apiRequest(`/api/v1/courses/${id}`),
   getCourseChapters: (courseId: string) => apiRequest(`/api/v1/courses/${courseId}/chapters`),
-  getChapter: (chapterId: string) => apiRequest(`/api/v1/chapters/${chapterId}`),
-  getNextChapter: (chapterId: string) => apiRequest(`/api/v1/chapters/${chapterId}/next`),
-  getPrevChapter: (chapterId: string) => apiRequest(`/api/v1/chapters/${chapterId}/previous`),
+  getChapter: (chapterId: string) => apiRequest(`/api/v1/courses/chapters/${chapterId}`),
+  getNextChapter: (chapterId: string) => apiRequest(`/api/v1/courses/chapters/${chapterId}/next`),
+  getPrevChapter: (chapterId: string) => apiRequest(`/api/v1/courses/chapters/${chapterId}/previous`),
 };
 
 /**
@@ -85,9 +85,9 @@ export const progressApi = {
  */
 export const searchApi = {
   searchAll: (query: string, limit: number = 10) =>
-    apiRequest(`/api/v1/search?q=${encodeURIComponent(query)}&limit=${limit}`),
+    apiRequest(`/api/v1/search?query=${encodeURIComponent(query)}&limit=${limit}`),
   searchCourses: (query: string, limit: number = 10) =>
-    apiRequest(`/api/v1/search/courses?q=${encodeURIComponent(query)}&limit=${limit}`),
+    apiRequest(`/api/v1/search/courses?query=${encodeURIComponent(query)}&limit=${limit}`),
   searchChapters: (query: string, limit: number = 10) =>
-    apiRequest(`/api/v1/search/chapters?q=${encodeURIComponent(query)}&limit=${limit}`),
+    apiRequest(`/api/v1/search/chapters?query=${encodeURIComponent(query)}&limit=${limit}`),
 };

@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { searchApi } from '@/lib/api';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -15,8 +16,7 @@ export default function SearchPage() {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/search?query=${encodeURIComponent(query)}`);
-      const data = await response.json();
+      const data = await searchApi.searchAll(query);
       setResults(data.results || []);
     } catch (error) {
       console.error('Error searching:', error);
